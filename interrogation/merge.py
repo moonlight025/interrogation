@@ -54,7 +54,7 @@ app = Flask(__name__)
 
 #----- handle word (word segmentation、fuzzywuzzy、remove common symptom) ----------------------------------
 
-def word_segmentation(input_message): # word segmentation and remove stopword
+def word_segmentation(input_message,UserId): # word segmentation and remove stopword
     seg_word = []
     articut = Articut(username="", apikey="")
     result = articut.parse(input_message)
@@ -77,7 +77,7 @@ def word_segmentation(input_message): # word segmentation and remove stopword
     print("----- word_segmentation finish -----")
     
 
-    feature = [i for i in fuzzywuzzy(seg_word)]
+    feature = [i for i in fuzzywuzzy(seg_word,UserId)]
     transform_data = pd.DataFrame(data=None, columns=symptoms)
     transform_data.loc[len(transform_data)] = 0
     for i in range(len(feature)):
@@ -87,7 +87,7 @@ def word_segmentation(input_message): # word segmentation and remove stopword
     return transform_data
 
 
-def fuzzywuzzy(seg_word):
+def fuzzywuzzy(seg_word,UserId):
     f = open('userdict.txt',"r",encoding="utf-8")
     userdict = []
     for line in f:
@@ -111,7 +111,7 @@ def fuzzywuzzy(seg_word):
             temp = data + ": " + str_grade
             delete_symptom.append(temp)
     for i in range(len(after_fuzz)):
-        with open('afterfuzz.txt', 'a',encoding="utf_8") as f:
+        with open(UserId+'afterfuzz.txt', 'a',encoding="utf_8") as f:
             f.write(after_fuzz[i])
             f.write("\n")
     print("score >= 90 (completely same):")
@@ -164,7 +164,7 @@ def predict(mat):
     print(prob)
     return prob
 #----- decision tree ------------------------------------------------------------------------------------------
-def decisiontree():
+def decisiontree(UserId):
     disease = pd.read_csv('特徵矩陣1.csv')
     diseases = disease['Disease'].unique()
     print(diseases)
@@ -172,14 +172,14 @@ def decisiontree():
     # tests = test['Disease'].unique()
     # print(tests)
     afpredict = []
-    f = open('disease.txt', 'r', encoding="utf_8")
+    f = open(UserId+'disease.txt', 'r', encoding="utf_8")
     lines = f.readlines()
     for line in lines:
         line = line.replace("\n", "")
         afpredict.append(line)
 
     after_fuzz = []
-    f = open('afterfuzz.txt', 'r', encoding="utf_8")
+    f = open(UserId+'afterfuzz.txt', 'r', encoding="utf_8")
     lines = f.readlines()
     for line in lines:
         line = line.replace("\n", "")
@@ -190,7 +190,7 @@ def decisiontree():
         for d in diseases:
             if ld == d:
                 new_diseases = disease[disease['Disease'] == d]
-                new_diseases.to_csv(f'disease_csv_{d}.csv', index=False, encoding='utf_8_sig')  #索引值不匯出到CSV檔案中
+                new_diseases.to_csv(f'{UserId}_disease_csv_{d}.csv', index=False, encoding='utf_8_sig')  #索引值不匯出到CSV檔案中
                 break
 
 
@@ -201,7 +201,7 @@ def decisiontree():
     #             new_test = test[test['Disease'] == t]
     #             new_test.to_csv(f'test_csv_{t}.csv', index=False, encoding='utf_8_sig')  #索引值不匯出到CSV檔案中
     #             break
-    disease_files = glob('disease_csv*.csv')
+    disease_files = glob(UserId+'_disease_csv*.csv')
     print(disease_files)
     # test_files = glob('test_csv*.csv')
     # print(test_files)
@@ -213,7 +213,7 @@ def decisiontree():
     for ld in linebot_diseases:
         for d in diseases:
             if ld == d:
-                file=r'disease_csv_'+d+'.csv'
+                file=UserId+'_disease_csv_'+d+'.csv'
                 os.remove(file)
                 break
     after_concat_disease.to_csv(f'after_concat_disease.csv', index=False, encoding='utf_8_sig')
@@ -240,17 +240,17 @@ def decisiontree():
     print(scores)
     print(f'Score: {scores.mean()}')
 
-    with open("disease-tree.dot", 'w', encoding='utf-8') as f:
+    with open(UserId+"_disease-tree.dot", 'w', encoding='utf-8') as f:
         f = tree.export_graphviz(clf, out_file=f, class_names=clf.classes_, feature_names=cols)
 
 # ----- binary method -------------------------------------
-def binary_method():
-    f = open('disease-tree.dot','r')
+def binary_method(UserId):
+    f = open(UserId+'_disease-tree.dot','r')
     dict_node = {}
     dict_leave = {}
     dict_path = {}
 
-    with open('disease-tree.dot', encoding="utf-8") as f:
+    with open(UserId+'_disease-tree.dot', encoding="utf-8") as f:
         data = f.readlines()[2:-1]
 
     for i in range(len(data)):
@@ -287,7 +287,7 @@ def binary_method():
     leave_list = list(dict_leave.values())
     # print(node_list, leave_list)
 
-    traversal(node_list, leave_list)
+    traversal(node_list, leave_list,UserId)
     
     # temp = ""
     # for i in range(len(temp_list)):
@@ -298,7 +298,7 @@ def binary_method():
     # print(list(dict_node.keys()))
 
 # ----- traversal -------------------------------------
-def traversal(node_list, leave_list):
+def traversal(node_list, leave_list,UserId):
     class node:
       def __init__(self, value):
         self.val = value
@@ -333,13 +333,13 @@ def traversal(node_list, leave_list):
     preorder(root)
 #     print(traversal)
     
-    f = open('traversal.txt', 'w')
+    f = open(UserId+'_traversal.txt', 'w')
     f.writelines(traversal)
     f.close()
 
-def inquiry(ans):
+def inquiry(ans,UserId):
     traversal = []
-    f = open('traversal.txt', 'r')
+    f = open(UserId+'_traversal.txt', 'r')
     lines = f.readlines()
     for line in lines:
         line = line.replace("\n", "")
@@ -365,11 +365,11 @@ def inquiry(ans):
         if ans == False:
             inquiry_sym = traversal[2]
             line_to_replace = 0
-            with open('traversal.txt', 'r') as file:                     
+            with open(UserId+'_traversal.txt', 'r') as file:                     
                 lines = file.readlines()
                 if len(lines) > int(line_to_replace):
                     lines[line_to_replace] = '1\n'   #new为新参数，记得加换行符\n
-            with open('traversal.txt', 'w') as file:
+            with open(UserId+'_traversal.txt', 'w') as file:
                 file.writelines( lines )
     elif num == 1: # num == 1
         if ans == True:
@@ -407,10 +407,11 @@ import re
 def handle_message(event):
     
     if event.message.text == "是":
-        inquiry_arr = inquiry(True)
+        UserId = event.source.user_id
+        inquiry_arr = inquiry(True,UserId)
         print(inquiry_arr)
         traversal = []
-        f = open('traversal.txt', 'r')
+        f = open(UserId+'_traversal.txt', 'r')
         lines = f.readlines()
         for line in lines:
             line = line.replace("\n", "")
@@ -422,10 +423,11 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text = "診斷為" + inquiry_arr[1]))
     
     elif event.message.text == "否":
-        inquiry_arr = inquiry(False)
+        UserId = event.source.user_id
+        inquiry_arr = inquiry(False,UserId)
         
         traversal = []
-        f = open('traversal.txt', 'r')
+        f = open(UserId+'_traversal.txt', 'r')
         lines = f.readlines()
         for line in lines:
             line = line.replace("\n", "")
@@ -437,7 +439,8 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text = "診斷為" + inquiry_arr[1]))
     else:
         input_message = event.message.text
-        sym = word_segmentation(input_message)
+        UserId = event.source.user_id
+        sym = word_segmentation(input_message,UserId)
         prob = predict(sym)
 
         reply_arr=[]
@@ -452,14 +455,14 @@ def handle_message(event):
                 reply_arr.append(TextSendMessage(text= "第" + str(i + 1) + "可能的" + disease + " " + rate))
                 dis_arr.append(disease)
         for i in range(len(dis_arr)):
-            with open('disease.txt', 'a',encoding="utf_8") as f:
+            with open(UserId+'disease.txt', 'a',encoding="utf_8") as f:
                 f.write(dis_arr[i])
                 f.write("\n")
-        decisiontree()
-        os.remove(r'afterfuzz.txt')
-        os.remove(r'disease.txt')
+        decisiontree(UserId)
+        # os.remove(r'afterfuzz.txt')
+        # os.remove(r'disease.txt')
         line_bot_api.reply_message(event.reply_token, reply_arr)
-        binary_method()
+        binary_method(UserId)
         binary_check = False
         disease, rate = prob[0]
         disease2, rate2 = prob[1]
@@ -467,9 +470,8 @@ def handle_message(event):
             binary_check = True
 
         if binary_check == True:
-            binary_method()
-            inquiry_arr = inquiry("start")
-            UserId = event.source.user_id
+            binary_method(UserId)
+            inquiry_arr = inquiry("start",UserId)
             line_bot_api.push_message(UserId, TemplateSendMessage(alt_text='Buttons template', template=ButtonsTemplate(title= "發現有症狀機率相似，做二分法", text= "請問是否有" + inquiry_arr[0] + "的症狀?", actions=[MessageTemplateAction(label= "是", text= "是"), MessageTemplateAction(label= "否", text= "否")])))
         
 if __name__ == "__main__":
