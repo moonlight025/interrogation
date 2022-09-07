@@ -1,0 +1,9 @@
+gunicorn
+flask
+pandas
+linebot
+sklearn
+ArticutAPI
+fuzzywuzzy
+numpy
+glob
