@@ -48,8 +48,8 @@ label = data['Disease']
 Diseases = label.unique()
 symptoms = data.drop(["Disease"], axis=1).columns
 
-from flask_ngrok import run_with_ngrok
-app = Flask(__name__)
+# from flask_ngrok import run_with_ngrok
+# app = Flask(__name__)
 
 
 #----- handle word (word segmentation、fuzzywuzzy、remove common symptom) ----------------------------------
@@ -474,6 +474,6 @@ def handle_message(event):
             inquiry_arr = inquiry("start",UserId)
             line_bot_api.push_message(UserId, TemplateSendMessage(alt_text='Buttons template', template=ButtonsTemplate(title= "發現有症狀機率相似，做二分法", text= "請問是否有" + inquiry_arr[0] + "的症狀?", actions=[MessageTemplateAction(label= "是", text= "是"), MessageTemplateAction(label= "否", text= "否")])))
         
-if __name__ == "__main__":
-    run_with_ngrok(app) # 串連 ngrok 服務
-    app.run()
+# if __name__ == "__main__":
+#     run_with_ngrok(app) # 串連 ngrok 服務
+#     app.run()
